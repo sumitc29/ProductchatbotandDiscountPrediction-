@@ -27,7 +27,7 @@ The application is fully **Dockerized** for easy deployment.
 ## Project Structure
 
 ```
-amazon_app/
+docker_app/
 ├── amazon_api.py          # Main FastAPI application
 ├── requirements.txt       # Python dependencies
 ├── models/
@@ -36,9 +36,64 @@ amazon_app/
 │   └── amazon_embeddings.pt  # Precomputed embeddings for RAG QA
 └── Dockerfile             # Docker configuration
 ```
+## Additional files
+
+##### llm_training.py
+- This file includes the training procedures to train the llm (small model) 
+- here due to compute constraint small llm model is used   model_name = "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-3T"
+- Model is trained using lora method with rank 8 since small model is used
+- Model is trained only for text generation (causal prediction)
+- Here are some output samples 
+
+>>> print(pipe(
+...     "list high discount mobile phone",
+...     max_length=200,
+...     truncation=True,
+...     do_sample=True,      # enable sampling
+...     repetition_penalty=1.2,
+...     temperature=0.5,     # controls randomness
+...     top_p=0.9,           # nucleus sampling
+...     top_k=50             # limits next-token options
+... )[0]["generated_text"])
+list high discount mobile phone 2018.
+You will be surprised to know that these are the best smartphone under 5k, and you can buy any one of them without hesitation!
+Xiaomi Redmi Note 7 is a great budget smartphone with good performance. It has a large battery, decent camera quality, and good display. The only downside of this device is its price which is around Rs 9,999 for the basic variant (3GB RAM + 32GB storage). But it's still worth buying if you want to get a top-notch phone at an affordable cost. This phone comes with Android 9 pie out of the box and is powered by octa core processor. You can use it as your daily driver or even upgrade it to higher version like android 11. If you have been looking for a cheap midrange phone then Xiaomi redmi note 
+
+
+>>> print(pipe(
+    "this electronic appliance is TV with",
+    max_length=200,
+    truncation=True,
+    do_sample=True,      # enable sampling
+    repetition_penalty=1.2,
+    temperature=0.7,     # controls randomness
+    top_p=0.9,           # nucleus sampling
+    top_k=50             # limits next-token options
+)[0]["generated_text"])
+--> You seem to be using the pipelines sequentially on GPU. In order to maximize efficiency please use a dataset
+this electronic appliance is TV with LED backlight and 32 inch screen size. It also has remote control facility to operate the functions of this electronic appliance.
+This electronic appliance is compatible with all kind of plug-in adapter like AC/DC power supply, USB power cable etc. You can use it for various purposes like PC games, video editing, audio recording etc. This electronic appliance comes with an amazing feature that you get your own personalized storage space by storing files using its internal memory card slot.
+
+
+##### discount_prediction_model_training.py
+For below api `/predict_discount` 
+This file serves as model training pipeline 
+Here XGBregressor model is used to get trained by the the data 
+following stages are performed in this file
+  1. data reading
+  2. data preprocessing
+  3. Feature selection
+  4. feature encoding
+  5. model training
+   
+##### notebook.ipynb
+ - This is an exploration notebook used to perform multiple experiments
+ - These experiment consist of data exploration and various other training scripts in sub sections 
+
+
 
 ### File Details:
-
+  
 - **amazon_api.py**: Contains FastAPI app, routes for:
   - `/predict_discount` → Predict product discount
   - `/query_product` → RAG-based question answering
@@ -91,52 +146,15 @@ pip install -r requirements.txt
 Predicts discount percentage given product details.
 
 **Method:** POST  
-**Input JSON Example:**
-
-```json
-{
-  "product_name": "Wayona Nylon Braided USB Cable for iPhone",
-  "category": "Computers&Accessories|Accessories&Peripherals|Cables&Accessories|Cables|USBCables",
-  "actual_price": 1099.0,
-  "rating": 4.2,
-  "rating_count": 24269,
-  "about_product": "Durable nylon braided design, fast charging and sync, high compatibility",
-  "review_content": "Good quality and works fine so far."
-}
-```
-
-**Response Example:**
-
-```json
-{
-  "product_name": "Wayona Nylon Braided USB Cable for iPhone",
-  "predicted_discount": 55.23
-}
-```
 
 ---
 
-### 2️⃣ `/query_product`  
+### 2️⃣ `/rag_answer`  
 
 RAG-based QA endpoint. Returns answers for user questions based on product data.
 
 **Method:** POST  
-**Input JSON Example:**
 
-```json
-{
-  "query": "I need a durable iPhone charging cable with fast charging.",
-  "top_k": 5
-}
-```
-
-**Response Example:**
-
-```json
-{
-  "answer": "You should consider the Wecool Unbreakable 3-in-1 charging cable, which supports fast charging and has a durable nylon braided design."
-}
-```
 
 **Notes:**  
 - The pipeline retrieves top-k most relevant product chunks from embeddings.  
@@ -254,7 +272,6 @@ docker run --gpus all -d -p 8000:8000 amazon_fastapi_app:latest
 ## Secret recepie
  - RAG framework
  Using cosine similarity since data is limited allowing better matching result
-
  - Discount prediction
  Used XGB based regression techineque 
  Outcome RMSE: ~14 on validation set
@@ -296,14 +313,9 @@ This project demonstrates **LoRA-based fine-tuning** of a causal language model 
 
 ---
 
-## Table of Contents
-
-1. [Overview] 
-2. [Project Structure] 
-
----
-
-## Overview
+## LLM finetuning
+### File: llm_training.py
+#### Overview
 
 This script allows you to fine-tune a language model in causal way using LoRA (Low-Rank Adaptation). LoRA introduces a small number of trainable parameters to large pre-trained models, making fine-tuning faster and memory-efficient.
 
@@ -316,12 +328,6 @@ Key features:
 
 ---
 
-## Project Structure
-
-
----
-
-## Setup & Installation
 
 ### Prerequisites
 
@@ -335,7 +341,7 @@ Key features:
 
 
 
-## Testing 
+## Testing & outcomes for API
 
 .local/sumit/experiment/hgincurl -X POST "http://localhost:8000/rag_answer" \ost:8000/rag_answer" \
      -H "Content-Type: application/json" \
