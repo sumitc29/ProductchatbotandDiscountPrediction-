@@ -13,16 +13,18 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install
+# Copy dependency list and install
 COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the app
-COPY . .
+# Copy app code and resources
+COPY amazon_api.py .
+COPY models/ ./models/
+COPY embeddings/ ./embeddings/
 
 # Expose port
 EXPOSE 8000
 
-# Run FastAPI using uvicorn
+# Start FastAPI app with Uvicorn
 CMD ["uvicorn", "amazon_api:app", "--host", "0.0.0.0", "--port", "8000"]
