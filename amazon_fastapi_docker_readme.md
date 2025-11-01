@@ -189,6 +189,7 @@ docker build -t amazon_fastapi_app:latest .
 docker run -d -p 8000:8000 --name amazon_app amazon_fastapi_app:latest
 ```
 
+
 - App URL: `http://localhost:8000`  
 - Check Swagger docs: `http://localhost:8000/docs`
 
@@ -215,9 +216,12 @@ curl -X POST "http://localhost:8000/predict_discount" \
 ### 2. RAG Query:
 
 ```bash
-curl -X POST "http://localhost:8000/query_product" \
--H "Content-Type: application/json" \
--d '{"query": "I need a durable iPhone charging cable with fast charging.", "top_k": 5}'
+curl -X POST "http://localhost:8000/rag_answer" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "query": "I need a durable iPhone charging cable with fast charging.",
+           "top_k": 5
+         }'
 ```
 
 ---
@@ -326,3 +330,32 @@ Key features:
 - `transformers` >= 4.33  
 - `datasets`  
 - `peft`  
+
+
+
+
+
+## Testing 
+
+.local/sumit/experiment/hgincurl -X POST "http://localhost:8000/rag_answer" \ost:8000/rag_answer" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "query": "I need a durable iPhone charging cable with fast charging.",
+           "top_k": 5
+         }'
+{"answer":" Based on the provided reviews, the Amazon Basics New Release Nylon USB-A to Lightning Cable Cord appears to be a suitable option for your requirements. Here's why:\n\n- It's rated as \"good\" multiple times and praised for its durability, making it more reliable than some other alternatives.\n- The review mentions that it's \"superab,\" suggesting it performs exceptionally well.\n- The reviewer notes that they were satisfied enough to recommend it despite it being \"expensive.\"\n- Despite mentioning potential issues such as slow charging speed or pins that come out easily, these seem to be rare occurrences rather than common problems.\n\nWhile Belkin and Wecool products offer similar features and quick charging speeds, their pricing makes them potentially more costly. However, based on customer satisfaction and performance reports, the Amazon Basics cable stands out as providing a balance between cost-effectiveness and reliability. \n\nTherefore, if budget is a concern but durability and fast charging are essential, the Amazon Basics cable would be a strong contender for meeting your needs. Always consider testing it before committing to make sure it meets your specific charging needs."}
+
+
+
+hginsight_new/docker_app# curl -X POST "http://localhost:8000/predict_discount" \
+-H "Content-Type: application/json" \
+-d '{
+  "products": [
+    {
+      "product_name": "Wayona Nylon Braided USB Cable for iPhone",
+      "category": "Computers&Accessories|Accessories&Peripherals|Cables&Accessories|Cables|USBCables",
+      "actual_price": 1099.0,
+      "rating": 4.2,
+      "rating_count": 24269,
+}'] } "review_content": "Good quality and works fine so far."arging and sync, high compatibility",
+{"predictions":[{"product_name":"Wayona Nylon Braided USB Cable for iPhone","predicted_discount":49.99294662475586}]}
